@@ -2,11 +2,27 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-def load_image(path):
-  image = cv2.imread(path)
-  return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+def load_image(path, use_alpha = False):
+  if use_alpha:
+    # will load alpha channel if exists
+    img = cv2.imread(path, cv2.IMREAD_UNCHANGED)
+    if img is not None:
+      return cv2.cvtColor(img, cv2.COLOR_BGRA2RGBA)
+  else:
+    img = cv2.imread(path)
+    if img is not None:
+      return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+  return None
 
 def mask_to_gray(mask):
+  """
+  Converts 0-1 mask to grayscale
+  Args:
+    mask: image with values between 0 and 1
+
+  Returns:
+    Image with 0-255 pixel values
+  """
   return np.array(mask).astype(np.uint8)*255
 
 def trim_image(img, min_x, max_x, min_y, max_y):
@@ -14,6 +30,8 @@ def trim_image(img, min_x, max_x, min_y, max_y):
 
 def is_gray(img):
   # gray images have either 1 channel or R = G = B
+  if img is None:
+    return False
   if len(img.shape) > 2:
     channels = cv2.split(img)
     if np.array_equal(channels[0], channels[1]) \
@@ -25,11 +43,13 @@ def is_gray(img):
     return True
 
 def display_image(img):
-    if is_gray(img):
-      plt.imshow(img, cmap="gray")
-    else:
-      plt.imshow(img)
-    plt.show()
+  if img is None:
+    return
+  if is_gray(img):
+    plt.imshow(img, cmap="gray")
+  else:
+    plt.imshow(img)
+  plt.show()
 
 def display_images(imgs):
   if len(imgs) == 1:
@@ -37,6 +57,8 @@ def display_images(imgs):
     return 
   fig, axs = plt.subplots(1, len(imgs))
   for ax, img in zip(axs, imgs):
+    if img is None:
+      continue
     if is_gray(img):
       ax.imshow(img, cmap="gray")
     else:
