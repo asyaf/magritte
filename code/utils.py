@@ -131,3 +131,34 @@ def paste_image_with_offset(large_img, small_img, x_offset, y_offset):
   small_h, small_w = small_img.shape[0], small_img.shape[1]
   img_copy[y_offset:y_offset+small_h, x_offset:x_offset+small_w] = small_img
   return img_copy
+
+def single_channel_to_gray(img):
+  return cv2.merge([img] * 3)
+
+def extract_alpha(img):
+  return img[:,:,3]
+
+def paste_on_locations(back_img, front_img, locations):
+  """
+  Args:
+    back_img - image to paste on, rgb or rgba
+    front_img - image to paste, rgb or rgba
+    locations - a list of rect locations in the format top, right, bottom, left
+  
+  Returns:
+    An image that has back_img as a background and front_img pasted on the given 
+    locations  
+  """
+  res_img = back_img.copy()
+  for (top, right, bottom, left) in locations:
+    width = right - left
+    height = bottom - top
+    resized_front_img = resize_image(front_img, width, height)
+    
+    # extract alpha channel and create a 3-channel image from it
+    alpha = extract_alpha(resized_front_img)
+    alpha_img = single_channel_to_gray(alpha)
+    
+    blended = alpha_blend(resized_front_img[:,:,0:3], res_img[top:bottom, left:right,0:3], alpha_img)
+    res_img[top:bottom, left:right, :] = blended
+  return res_img
